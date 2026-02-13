@@ -18,14 +18,16 @@ We calculate an "Offensive Score" and "Defensive Score" for each team using a we
 * **Shots:** Measures possession and accounts for team skill. It is meant to minimise luck in our assessment. Weight: $20\%$.
 
 The raw score is then adjusted for special cases.
-We add a bonus based on xG generated per 60 minutes of power play time. We also penalise a team's defensive score based on their total penalty minutes.
+We add a bonus based on xG generated per 60 minutes of power play time. This is added as a bonus to the offensive score. 
 
-To convert these scores into a single "Team Strength" metric (Win Percentage), we use the Pythagorean Expectation formula given as:
+We also penalise a team's defensive score based on their total penalty minutes. Team with high penalty minutes have their defensive score worsened by a factor proportional to their indiscipline.
+
+To convert these scores into a single "Team Strength" metric (Win Percentage), we used the Pythagorean Expectation formula given as:
 $$
 \text{Win \%} = \frac{(\text{Offensive Score})^{2.15}}{(\text{Offensive Score})^{2.15} + (\text{Defensive Score})^{2.15}}
 $$
 
-The exponent of $2.15$ was selected for being optimal for hockey.
+The exponent of $2.15$ was selected for being optimal for hockey as per source review.
 
 To predict the probability of a team with win percentage $A$ (home) beating a team with win percentage $B$, the Log5 formula is used plus the home ice advantage bonus:
 $$
@@ -50,5 +52,27 @@ This module is used to predict win probabilities for the given matchups.
 The execution script. It loads the raw data, calls features.py, loads the matchups and predicts the probability of home team winning each matchup.
 
 ## Phase 1b: Line Performance Analysis
+### 1. Overview
+The second phase of our analysis measures offensive line quality disparity. The goal is to quantify how much quality decreases between a team's 1st line and 2nd line.
+
+### 2. Methodology
+We accounted for the following two variables:
+1. **Time on Ice:** Lines play different minutes per game.
+2. **Quality of Competition:** First lines typically face stronger opponents than second lines. A lower performance should not be penalised because of this.
+
+To account for time on ice, all metrics were normalised to a "Per 60 minutes" rate. 
+
+We calculate a "Defensive Strength Rating" for every defensive pairing in the league. This is defined as the xG Allowed per 60 Minutes by that specific pair. Hence, a lower score indicates a better defense.
+
+We calculate the Average Defensive Strength Faced for every offensive line. We then calculate an adjusted xG by comparing the specific defense faced to the global average. 
+
+If a line scores heavily against a weak defense, the xG is multiplied by a ratio $<1$, and their score is penalised.
+Conversely, an offense against a strong defense multiplies the xG by a ratio $>1$ and their score is boosted.
+
+Finally, we calculate the Disparity Ratio for each team. This is defined as the Adjusted Performance of the 1st Line divided by the Adjusted Performance of the 2nd Line.
+
+### 3. Code Structure
+Phase 1b is developed almost exclusively by a LinePerformanceAnalyser class that keeps the line disparity logic separate. Its execution is controlled by the main function, and the class utilises the clean_data function from Phase 1a. However, the rest of the logic for Phase 1b is contained within this class.
+
 
 ## Phase 1c: Data Visualisation
