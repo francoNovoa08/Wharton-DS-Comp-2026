@@ -7,9 +7,9 @@ This project was developed for the Wharton High School Data Science competition.
 
 ### 2. Strategy
 Our analysis rests on the following three pillars:
-1. **Process > Results**: A team's undrlying metrics are better predictors of future success than their win/loss record
+1. **Process > Results**: A team's underlying metrics are better predictors of future success than their win/loss record.
 2. **Context matters:** A team should account for differences in strength between the Power Play and 5v5. In addition, penalties should be penalised.
-3. **Home ice advantage:** The dataset shows home teams win more than visiting teams. LLM analysis showed home teams win $~56.4\%$ of the time. Our model accounts for this bias.
+3. **Home ice advantage:** The dataset shows home teams win more than visiting teams. LLM analysis showed home teams win $\approx 56.4\%$ of the time. Our model accounts for this bias.
 
 ### 3. Mathematical Methodology
 We calculate an "Offensive Score" and "Defensive Score" for each team using a weighted formula. This approach balances the following metrics:
@@ -23,6 +23,7 @@ We add a bonus based on xG generated per 60 minutes of power play time. This is 
 We also penalise a team's defensive score based on their total penalty minutes. Team with high penalty minutes have their defensive score worsened by a factor proportional to their indiscipline.
 
 To convert these scores into a single "Team Strength" metric (Win Percentage), we used the Pythagorean Expectation formula given as:
+
 $$
 \text{Win \%} = \frac{(\text{Offensive Score})^{2.15}}{(\text{Offensive Score})^{2.15} + (\text{Defensive Score})^{2.15}}
 $$
@@ -30,6 +31,7 @@ $$
 The exponent of $2.15$ was selected for being optimal for hockey as per source review.
 
 To predict the probability of a team with win percentage $A$ (home) beating a team with win percentage $B$, the Log5 formula is used plus the home ice advantage bonus:
+
 $$
 P(A\text{ Wins}) = \frac{A(1 - B)}{A(1 - B) + B(1 - A)} 
 $$
@@ -37,21 +39,25 @@ $$
 LLM analysis suggests home teams win around $6\%$ more than away teams. This implies an even match with a $0.50$ win probability for the home team should become a $0.56$ win probability for the home team and a $0.44$ win probability for the away team. However, adding a flat percentage is not always accurate and may cause win probabilities to exceed $1.0$. As such, an odds ratio is used.
 
 The odds $O$ are given by the probability of an event $P$ as follows:
+
 $$
 O = \frac{P}{1-P}
 $$
 
 For the even game, $O_e$ is:
+
 $$
 O_e = \frac{0.50}{1-0.50} = 1.0
 $$
 
 The target odds $O_t$ where $P=0.56$ is given by:
+
 $$
 O_t = \frac{0.56}{1-0.56}\approx 1.27
 $$
 
 A multiplier that converts some neutral odds into the target odds is given by:
+
 $$
 \frac{1.27}{1.0} = 1.27
 $$
