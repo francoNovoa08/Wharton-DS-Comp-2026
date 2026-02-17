@@ -19,10 +19,22 @@ def clean_data(df):
     return clean_df
 
 def calculate_special_teams(df):
-    pp_df = df[df["home_off_line"] == "PP_up"]
-    pp_stats = pp_df.groupby("home_team")[["home_xg", "toi"]].sum().reset_index()
-    pp_stats["pp_efficiency"] = (pp_stats["home_xg"] / pp_stats["toi"]) * 3600
-    return pp_stats[["home_team", "pp_efficiency"]].rename(columns={"home_team": "team"})
+    home_pp = df[df["home_off_line"] == "PP_up"].groupby("home_team")[
+        ["home_xg", "toi"]
+    ].sum().reset_index()
+    home_pp.columns = ["team", "xg", "toi"]
+
+    away_pp = df[df["away_off_line"] == "PP_up"].groupby("away_team")[
+        ["away_xg", "toi"]
+    ].sum().reset_index()
+    away_pp.columns = ["team", "xg", "toi"]
+
+    # Combine PP for home + away
+    total_pp = pd.concat([home_pp, away_pp]).groupby("team").sum().reset_index()
+
+    total_pp["pp_efficiency"] = (total_pp["xg"] / total_pp["toi"]) * 3600
+    
+    return total_pp[["team", "pp_efficiency"]]
 
 def calculate_discipline(df):
     home_penalties = df.groupby("home_team")["home_penalty_minutes"].sum().reset_index()
