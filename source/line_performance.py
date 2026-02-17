@@ -4,8 +4,8 @@ from features import clean_data
 
 class LinePerformanceAnalyser:
 
-    def __init__(self, path):
-        self.raw_df = pd.read_csv(path)
+    def __init__(self, df):
+        self.raw_df = df.copy() 
         self.df = clean_data(self.raw_df)
         self.def_map = {}
         self.global_def_avg = 0

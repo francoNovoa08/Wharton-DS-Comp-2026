@@ -31,25 +31,32 @@ The exponent of $2.15$ was selected for being optimal for hockey as per source r
 
 To predict the probability of a team with win percentage $A$ (home) beating a team with win percentage $B$, the Log5 formula is used plus the home ice advantage bonus:
 $$
-P(A\text{ Wins}) = \frac{A(1 - B)}{A(1 - B) + B(1 - A)} + 6\%
+P(A\text{ Wins}) = \frac{A(1 - B)}{A(1 - B) + B(1 - A)} 
 $$
 
-### 4. Code Structure
-The project is composed of three Python files.
+LLM analysis suggests home teams win around $6\%$ more than away teams. This implies an even match with a $0.50$ win probability for the home team should become a $0.56$ win probability for the home team and a $0.44$ win probability for the away team. However, adding a flat percentage is not always accurate and may cause win probabilities to exceed $1.0$. As such, an odds ratio is used.
 
-**features.py**
-This module handles data cleaning and feature analysis.
-* clean_data(df): Takes in the data frame. It filters out empty net situations to prevent skewing defensive stats. This is a situation where the net is left unguarded and the goalie takes an offensive position.
-* calculate_special_teams(df): Aggregates Power Play data to find xG per 60 minutes.
-* calculate_discipline(df): Aggregates Penalty Minutes to measure team discipline.
-* calculate_features(df): Merges 5v5 stats, special teams, and discipline into the final season_stats dataframe and calculates the composite scores.
+The odds $O$ are given by the probability of an event $P$ as follows:
+$$
+O = \frac{P}{1-P}
+$$
 
-**predict.py**
-This module is used to predict win probabilities for the given matchups. 
-* predict_matchup(home, away, rankings): Implementation of the Log5 formula. Returns the final probability of home team winning.
+For the even game, $O_e$ is:
+$$
+O_e = \frac{0.50}{1-0.50} = 1.0
+$$
 
-**main.py**
-The execution script. It loads the raw data, calls features.py, loads the matchups and predicts the probability of home team winning each matchup.
+The target odds $O_t$ where $P=0.56$ is given by:
+$$
+O_t = \frac{0.56}{1-0.56}\approx 1.27
+$$
+
+A multiplier that converts some neutral odds into the target odds is given by:
+$$
+\frac{1.27}{1.0} = 1.27
+$$
+
+Hence for every probability of a team winning, the probability is converted into odds. The odds are multiplied by this multiplier $(1.27)$ to give the home team advantage and then converted back into a probability.
 
 ## Phase 1b: Line Performance Analysis
 ### 1. Overview
@@ -71,8 +78,11 @@ Conversely, an offense against a strong defense multiplies the xG by a ratio $>1
 
 Finally, we calculate the Disparity Ratio for each team. This is defined as the Adjusted Performance of the 1st Line divided by the Adjusted Performance of the 2nd Line.
 
-### 3. Code Structure
-Phase 1b is developed almost exclusively by a LinePerformanceAnalyser class that keeps the line disparity logic separate. Its execution is controlled by the main function, and the class utilises the clean_data function from Phase 1a. However, the rest of the logic for Phase 1b is contained within this class.
-
-
 ## Phase 1c: Data Visualisation
+For Phase 1c, we produced a chart of the predicted win percentage (team strength) derived in Phase 1a (y-axis) against the offensive line disparity ratio derived in Phase 1b (x-axis). This chart should show the correlation between team strength and line disparity. 
+
+A positive correlation would imply less balanced lines correlate with greater team strengths, suggesting a stellar first line is more important for winning than having balanced lines. Conversely, a negative correlation would imply balancing was correlated with a greater team strength.
+
+We added a red area representing the $95\%$ confidence interval. This area represents the margin of error of the trendline. 
+
+The produced graph showed a generally weak negative correlation between team strength and offensive line disparity. While stronger teams were more likely to have balanced offensive lines, this was not deterministic of their strength. The very low $R^2$ value suggests a very poor fit of the linear model.
