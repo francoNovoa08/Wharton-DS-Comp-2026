@@ -7,34 +7,38 @@ This project was developed for the Wharton High School Data Science competition.
 
 ### 2. Strategy
 Our analysis rests on the following three pillars:
-1. **Process > Results**: A team's underlying metrics are better predictors of future success than their win/loss record.
+1. **All metrics should be considered**: Statistics should be analyses instead of arbitrarily being chosen as better.
 2. **Context matters:** A team should account for differences in strength between the Power Play and 5v5. In addition, penalties should be penalised.
 3. **Home ice advantage:** The dataset shows home teams win more than visiting teams. LLM analysis showed home teams win $\approx 56.4\%$ of the time. Our model accounts for this bias.
 
 ### 3. Mathematical Methodology
 We calculate an "Offensive Score" and "Defensive Score" for each team using a weighted formula. This approach balances the following metrics:
-* **xG (Expected goals)**: Measures the quality of chances created. Weight: $40\%$.
-* **Goals:** Measures the actual results. Weight: $40\%$.
-* **Shots:** Measures possession and accounts for team skill. It is meant to minimise luck in our assessment. Weight: $20\%$.
+* **xG (Expected goals)**: Measures the quality of chances created. 
+* **Goals:** Measures the actual results. 
+* **Shots:** Measures possession and accounts for team skill. It is meant to minimise luck in our assessment. 
 
 The raw score is then adjusted for special cases.
 We add a bonus based on xG generated per 60 minutes of power play time. This is added as a bonus to the offensive score. 
 
-We also penalise a team's defensive score based on their total penalty minutes. Team with high penalty minutes have their defensive score worsened by a factor proportional to their indiscipline.
+The offensive and defensive scores are divided by the total time on ice to create a per-hour rate.
+
+We also penalise a team's defensive score based on their total penalty minutes. Team with high penalty minutes have their defensive score worsened by a factor proportional to their indiscipline. The power play bonus and penalties are proportional multipliers.
+
+The factors and weights were chosen by continously backtesting to find optimal values for the highest accuracy. The raw totals are not weighted together. Rather, a min-max normalisation is performed on expected goals, actual goals, and shots, before any weights are applied. They are normalised for a scale from $0$ to $1$. These are applied evenly so a greater volume of a given statistic does not skewer results.
 
 To convert these scores into a single "Team Strength" metric (Win Percentage), we used the Pythagorean Expectation formula given as:
 
 $$
-\text{Win \%} = \frac{(\text{Offensive Score})^{2.15}}{(\text{Offensive Score})^{2.15} + (\text{Defensive Score})^{2.15}}
+\text{Win \%} = \frac{(\text{Offensive Score})^{EXPONENT}}{(\text{Offensive Score})^{EXPONENT} + (\text{Defensive Score})^{EXPONENT}}
 $$
 
-The exponent of $2.15$ was selected for being optimal for hockey as per source review.
+The EXPONENT variable value was chosen through optimising several parameter weights and backtesting.
 
 To predict the probability of a team with win percentage $A$ (home) beating a team with win percentage $B$, the Log5 formula is used plus the home ice advantage bonus:
 
 $$
 P(A\text{ Wins}) = \frac{A(1 - B)}{A(1 - B) + B(1 - A)} 
-$$
+$$¿
 
 LLM analysis suggests home teams win around $6\%$ more than away teams. This implies an even match with a $0.50$ win probability for the home team should become a $0.56$ win probability for the home team and a $0.44$ win probability for the away team. However, adding a flat percentage is not always accurate and may cause win probabilities to exceed $1.0$. As such, an odds ratio is used.
 
@@ -92,3 +96,8 @@ A positive correlation would imply less balanced lines correlate with greater te
 We added a red area representing the $95\%$ confidence interval. This area represents the margin of error of the trendline. 
 
 The produced graph showed a generally weak negative correlation between team strength and offensive line disparity. While stronger teams were more likely to have balanced offensive lines, this was not deterministic of their strength. The very low $R^2$ value suggests a very poor fit of the linear model.
+
+## Backtesting
+The weights for goals, expected goals, shots, the exponent for the Log5 formula, and the penalty minutes factor were defined through continous backtesting. After creating the model, it was tested against the original games. Several weights and exponents were chosen to find the ideal values that produced the highest accuracy.
+
+The "continous backtesting" involved a grid search algorithm, whereby many permutations of factors were tested to find the ones that gave the highest accuracy against the initial dataset. This was performed on the variables of goals, expected goals, Log5 exponent, penalty minutes, and power play weight.

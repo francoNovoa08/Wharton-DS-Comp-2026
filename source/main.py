@@ -36,6 +36,6 @@ print(f"{"Rank":<5} {"Team":<25} {"Ratio":<10} {"L1 Adj xG":<10} {"L2 Adj xG":<1
 for i, (team, row) in enumerate(disparity.head(10).iterrows(), 1):
     print(f"#{i:<4} {team:<25} {row["Disparity_Ratio"]:.3f}      {row["Line_1_Adj"]:.2f}       {row["Line_2_Adj"]:.2f}")
 
-# --- PHASE 1c: Visualization ---
+# --- PHASE 1c: Visualisation ---
 print("\n--- GENERATING VISUALISATION ---")
 visualise.create_visualisation(power_rankings, disparity)

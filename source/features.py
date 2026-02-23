@@ -1,13 +1,12 @@
 import pandas as pd
 import numpy as np
 
-WEIGHT_GOALS = 0.4
-WEIGHT_XG = 0.4
-WEIGHT_SHOTS = 0.2
-
-PP_WEIGHT = 50 
-
-PIM_FACTOR = 5000 
+WEIGHT_XG = 0.1899
+WEIGHT_GOALS = 0.6789
+WEIGHT_SHOTS = 0.13
+EXPONENT = 0.9989
+WEIGHT_PP = 48.69 
+PIM_FACTOR = 2369.7 
 
 def clean_data(df):
     clean_df = df[
@@ -68,30 +67,34 @@ def calculate_features(df):
     season_stats = season_stats.merge(pp_stats, on="team", how="left").fillna(0)
     season_stats = season_stats.merge(discipline_stats, on="team", how="left").fillna(0)
 
-    season_stats["raw_off_total"] = (WEIGHT_XG * season_stats["xg_for"]) + \
-                                    (WEIGHT_GOALS * season_stats["goals_for"]) + \
-                                    (WEIGHT_SHOTS * season_stats["shots_for"])
+    for col in ["xg_for", "goals_for", "shots_for", "xg_against", "goals_against", "shots_against"]:
+        min_val = season_stats[col].min()
+        max_val = season_stats[col].max()
+        season_stats[f"norm_{col}"] = (season_stats[col] - min_val) / (max_val - min_val)
+
+    season_stats["raw_off_total"] = (WEIGHT_XG * season_stats["norm_xg_for"]) + \
+                                    (WEIGHT_GOALS * season_stats["norm_goals_for"]) + \
+                                    (WEIGHT_SHOTS * season_stats["norm_shots_for"])
                                     
-    season_stats["raw_def_total"] = (WEIGHT_XG * season_stats["xg_against"]) + \
-                                    (WEIGHT_GOALS * season_stats["goals_against"]) + \
-                                    (WEIGHT_SHOTS * season_stats["shots_against"])
+    season_stats["raw_def_total"] = (WEIGHT_XG * season_stats["norm_xg_against"]) + \
+                                    (WEIGHT_GOALS * season_stats["norm_goals_against"]) + \
+                                    (WEIGHT_SHOTS * season_stats["norm_shots_against"])
 
     season_stats["toi_hours"] = season_stats["toi"] / 3600
     
     season_stats["raw_off_rate"] = season_stats["raw_off_total"] / season_stats["toi_hours"]
     season_stats["raw_def_rate"] = season_stats["raw_def_total"] / season_stats["toi_hours"]
 
-    season_stats["adj_off_score"] = season_stats["raw_off_rate"] * (1 + (season_stats["pp_efficiency"] / PP_WEIGHT))
+    season_stats["adj_off_score"] = season_stats["raw_off_rate"] * (1 + (season_stats["pp_efficiency"] / WEIGHT_PP))
 
     season_stats["adj_def_score"] = season_stats["raw_def_rate"] * (1 + (season_stats["pim"] / PIM_FACTOR))
 
     return season_stats
 
-def calc_win_pct(stats_df):
-    exponent = 2.15 
+def calc_win_pct(stats_df): 
     
-    stats_df["win_pct"] = (stats_df["adj_off_score"] ** exponent) / \
-                          ((stats_df["adj_off_score"] ** exponent) + 
-                           (stats_df["adj_def_score"] ** exponent))
+    stats_df["win_pct"] = (stats_df["adj_off_score"] ** EXPONENT) / \
+                          ((stats_df["adj_off_score"] ** EXPONENT) + 
+                           (stats_df["adj_def_score"] ** EXPONENT))
                            
     return stats_df.sort_values("win_pct", ascending=False)
