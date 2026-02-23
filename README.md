@@ -38,7 +38,7 @@ To predict the probability of a team with win percentage $A$ (home) beating a te
 
 $$
 P(A\text{ Wins}) = \frac{A(1 - B)}{A(1 - B) + B(1 - A)} 
-$$¿
+$$
 
 LLM analysis suggests home teams win around $6\%$ more than away teams. This implies an even match with a $0.50$ win probability for the home team should become a $0.56$ win probability for the home team and a $0.44$ win probability for the away team. However, adding a flat percentage is not always accurate and may cause win probabilities to exceed $1.0$. As such, an odds ratio is used.
 
